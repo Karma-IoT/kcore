@@ -66,6 +66,74 @@ class TypedAllocator {
         char count[N];
 };
 
+template<class Tp, int N>
+TypedAllocator<Tp,N>::TypedAllocator() {
+    memset(this->count, 0, N);
+    memset(this->mem, 0, sizeof(Tp) * N);
+}
+
+template<class Tp, int N>
+auto TypedAllocator<Tp,N>::alloc() -> Tp * {
+    int i;
+    for(i = 0; i < this->num; ++i) {
+        if(this->count[i] == 0) {
+            /* If this block was unused, we increase the reference count to
+            indicate that it now is used and return a pointer to the
+            memory block. */
+            ++(this->count[i]);
+            return (void *)((char *)this->mem + (i * this->size));
+        }
+    }
+
+    /* No free block was found, so we return NULL to indicate failure to
+     allocate block. */
+    return nullptr;
+}
+
+template<class Tp, int N>
+auto TypedAllocator<Tp,N>::free(Tp *ptr) -> char {
+    int i;
+    char *ptr2;
+
+    /* Walk through the list of blocks and try to find the block to
+    which the pointer "ptr" points to. */
+    ptr2 = (char *)this->mem;
+    for(i = 0; i < this->num; ++i) {
+
+        if(ptr2 == (char *)ptr) {
+            /* We've found to block to which "ptr" points so we decrease the
+            reference count and return the new value of it. */
+            if(this->count[i] > 0) {
+                /* Make sure that we don't deallocate free memory. */
+                --(this->count[i]);
+            }
+            return this->count[i];
+        }
+        ptr2 += this->size;
+    }
+    return -1;
+}
+
+template<class Tp, int N>
+auto TypedAllocator<Tp,N>::has_object(Tp *ptr) -> bool{
+    return (char *)ptr >= (char *)this->mem &&
+        (char *)ptr < (char *)this->mem + (this->num * this->size);
+}
+
+template<class Tp, int N>
+auto TypedAllocator<Tp,N>::empty_num() -> int{
+    int i;
+    int num_free = 0;
+
+    for(i = 0; i < this->num; ++i) {
+        if(this->count[i] == 0) {
+            ++num_free;
+        }
+    }
+    
+    return num_free;
+}
+
 KCORE_NAMESPACE_END
 
 #endif /* TYPED_ALLOCATOR_H_ */
