@@ -44,51 +44,74 @@
 #include "constants.h"
 #include "stl/kstddef.h"
 
-KCORE_NAMESPACE_BEGIN
+namespace KCORE_NAMESPACE {
 
-KCORE_INNER_NAMESPACE_BEGIN
+namespace KCORE_INNER_NAMESPACE {
 
 template<class T>
 concept bool allocate = requires(T a,size_t n) {
     { a.allocate(n) } -> typename T::value_type*;
-    { allocate(a,n) } -> typename T::value_type*;
-}
+    { T::allocate(a,n) } -> typename T::value_type*;
+};
 
 template<class T>
 concept bool allocate_with_hint = requires(T a, size_t n, const void *hint) {
     { a.allocate(n,hint) } -> typename T::value_type*;
-    { allocate(a,n,hint) } -> typename T::value_type*;
-}
-
-template<class T>
-concept bool deallocate = requires(T a, T *p, size_t n,) {
-    { a.deallocate(p,n) } -> void;
-    { deallocate(a,p,n) } -> void;
-}
-
-template<class T>
-
-KCORE_INNER_NAMESPACE_END
-
-template<class T>
-concept bool Allocator = requires(T a) {
-    typename T::size_type;
-    typename T::difference_type;
-} && requires (T a, size_t n) {
-    { a.allocate(n) } -> typename T::value_type*;
-} && requires (T a, size_t n, const void *hint) {
-    { a.allocate(n,hint) } -> typename T::value_type *;
-} && requires (T a, T *p,size_t n) {
-    { a.deallocate(p,n) } -> void;
-} && requires (T a, T b) {
-    { a == b } -> bool;
-    { a != b } -> bool;
+    { T::allocate(a,n,hint) } -> typename T::value_type*;
 };
 
 template<class T>
-concept bool 
+concept bool deallocate = requires(T a, typename T::value_type *p, size_t n) {
+    { a.deallocate(p,n) } -> void;
+    { T::deallocate(a,p,n) } -> void;
+};
 
+template<class T>
+concept bool single_allocate = requires(T a) {
+    { a.allocate() } -> typename T::value_type*;
+    { T::allocate(a) } -> typename T::value_type*;
+};
 
-KCORE_NAMESPACE_END
+template<class T>
+concept bool single_deallocate = requires(T a, typename T::value_type *p) {
+    { a.deallocate(p) } -> void;
+    { T::deallocate(a,p) } -> void;
+};
+
+template<class T>
+concept bool base_allocator = requires(T a) {
+    typename T::value_type;
+};
+
+} /* KCORE_INNER_NAMESPACE */
+
+template<class T>
+concept bool allocator = 
+    KCORE_INNER_NAMESPACE::allocate<T> &&
+    KCORE_INNER_NAMESPACE::allocate_with_hint<T> &&
+    KCORE_INNER_NAMESPACE::deallocate<T> &&
+    KCORE_INNER_NAMESPACE::base_allocator<T>;
+
+template<class T>
+concept bool single_allocator = 
+    KCORE_INNER_NAMESPACE::single_allocate<T> &&
+    KCORE_INNER_NAMESPACE::single_deallocate<T> &&
+    KCORE_INNER_NAMESPACE::base_allocator<T>;
+
+template<class T>
+concept bool reference_count_allocator = 
+    KCORE_INNER_NAMESPACE::base_allocator<T> &&
+    requires (T a,typename T::value_type *p) {
+        { a.ref_count(p) } -> size_t;
+    };
+
+template<class T>
+concept bool extend_allocator = 
+    KCORE_INNER_NAMESPACE::base_allocator<T> &&
+    requires (T a) {
+        { a.available_count() } -> size_t;
+    };
+
+} /* KCORE_NAMESPACE */
  
 #endif /* ALLOCATOR_H_ */

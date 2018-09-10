@@ -45,7 +45,7 @@
 #include "stl/kstring.h"
 #include "stl/kstddef.h"
 
-KCORE_NAMESPACE_BEGIN
+namespace KCORE_NAMESPACE {
 
 template<class Tp, int N>
 class TypedAllocator {
@@ -138,6 +138,6 @@ auto TypedAllocator<Tp,N>::empty_num() -> int{
     return num_free;
 }
 
-KCORE_NAMESPACE_END
+}
 
 #endif /* TYPED_ALLOCATOR_H_ */

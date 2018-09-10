@@ -46,6 +46,7 @@
 #if defined(KCORE_USE_STL)
 
 #include "cstring"
+//std::memset
 
 #else
 

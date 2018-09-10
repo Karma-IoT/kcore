@@ -46,6 +46,7 @@
 #if defined(KCORE_USE_STL)
 
 #include "cstddef"
+//std::size_t
 
 #else
 

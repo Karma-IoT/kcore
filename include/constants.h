@@ -41,13 +41,10 @@
 #ifndef CONSTANTS_H_
 #define CONSTANTS_H_
 
-#define KCORE_NAMESPACE_BEGIN namespace kcore {
-    
-#define KCORE_NAMESPACE_END }
+#define KCORE_NAMESPACE kcore
 
-#define KCORE_INNER_NAMESPACE_BEGIN namespace inner{
+#define KCORE_INNER_NAMESPACE inner
 
-#define KCORE_INNER_NAMESPACE_END }
 
 #ifndef KCORE_USE_STL
 #define KCORE_USE_STL
