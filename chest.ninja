@@ -8,4 +8,9 @@ chest_test_dir = test
 
 build $chest_binary_dir/test_typed_allocator.o: cxx $chest_test_dir/test_typed_allocator.cpp
 
+build $chest_binary_dir/test_allocator.o: cxx $chest_test_dir/test_allocator.cpp
+
+
 build $chest_binary_dir/test_typed_allocator:  link $chest_binary_dir/test_typed_allocator.o
+
+build $chest_binary_dir/test_allocator:  link $chest_binary_dir/test_allocator.o

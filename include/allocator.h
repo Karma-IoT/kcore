@@ -32,25 +32,63 @@
 
 /**
  * \file
- *         Constants definition.
+ *         Concepts of allocator.
  * \author
  *         tiannian <dtiannian@aliyun.com>
  *
  */
 
-#ifndef CONSTANTS_H_
-#define CONSTANTS_H_
+#ifndef ALLOCATOR_H_
+#define ALLOCATOR_H_
 
-#define KCORE_NAMESPACE_BEGIN namespace kcore {
-    
-#define KCORE_NAMESPACE_END }
+#include "constants.h"
+#include "stl/kstddef.h"
 
-#define KCORE_INNER_NAMESPACE_BEGIN namespace inner{
+KCORE_NAMESPACE_BEGIN
 
-#define KCORE_INNER_NAMESPACE_END }
+KCORE_INNER_NAMESPACE_BEGIN
 
-#ifndef KCORE_USE_STL
-#define KCORE_USE_STL
-#endif
+template<class T>
+concept bool allocate = requires(T a,size_t n) {
+    { a.allocate(n) } -> typename T::value_type*;
+    { allocate(a,n) } -> typename T::value_type*;
+}
 
-#endif /* CONSTANTS_H_ */
+template<class T>
+concept bool allocate_with_hint = requires(T a, size_t n, const void *hint) {
+    { a.allocate(n,hint) } -> typename T::value_type*;
+    { allocate(a,n,hint) } -> typename T::value_type*;
+}
+
+template<class T>
+concept bool deallocate = requires(T a, T *p, size_t n,) {
+    { a.deallocate(p,n) } -> void;
+    { deallocate(a,p,n) } -> void;
+}
+
+template<class T>
+
+KCORE_INNER_NAMESPACE_END
+
+template<class T>
+concept bool Allocator = requires(T a) {
+    typename T::size_type;
+    typename T::difference_type;
+} && requires (T a, size_t n) {
+    { a.allocate(n) } -> typename T::value_type*;
+} && requires (T a, size_t n, const void *hint) {
+    { a.allocate(n,hint) } -> typename T::value_type *;
+} && requires (T a, T *p,size_t n) {
+    { a.deallocate(p,n) } -> void;
+} && requires (T a, T b) {
+    { a == b } -> bool;
+    { a != b } -> bool;
+};
+
+template<class T>
+concept bool 
+
+
+KCORE_NAMESPACE_END
+ 
+#endif /* ALLOCATOR_H_ */

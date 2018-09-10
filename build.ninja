@@ -4,7 +4,7 @@ ld = g++
 ar = ar
 
 cflags = -g -Iinclude/
-cxxflags = -g -Iinclude/ -std=c++11
+cxxflags = -g -Iinclude/ -std=c++17 -fconcepts
 
 rule cc
     depfile = $out.d

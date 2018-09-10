@@ -32,25 +32,23 @@
 
 /**
  * \file
- *         Constants definition.
+ *         STL-like cstring.
  * \author
  *         tiannian <dtiannian@aliyun.com>
  *
  */
 
-#ifndef CONSTANTS_H_
-#define CONSTANTS_H_
+#ifndef KSTDDEF_H_
+#define KSTDDEF_H_
+ 
+#include "constants.h"
 
-#define KCORE_NAMESPACE_BEGIN namespace kcore {
-    
-#define KCORE_NAMESPACE_END }
+#if defined(KCORE_USE_STL)
 
-#define KCORE_INNER_NAMESPACE_BEGIN namespace inner{
+#include "cstddef"
 
-#define KCORE_INNER_NAMESPACE_END }
+#else
 
-#ifndef KCORE_USE_STL
-#define KCORE_USE_STL
 #endif
 
-#endif /* CONSTANTS_H_ */
+#endif /* KSTDDEF_H_ */

@@ -4,6 +4,6 @@ using namespace kcore;
 
 int main() {
     TypedAllocator<int,8> allocator;
-    int *a = allocator.alloc();
+    // int *a = allocator.allocate();
     return 0;
 }

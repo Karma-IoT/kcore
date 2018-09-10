@@ -42,7 +42,8 @@
 #define TYPED_ALLOCATOR_H_
 
 #include "constants.h"
-#include "kstring.h"
+#include "stl/kstring.h"
+#include "stl/kstddef.h"
 
 KCORE_NAMESPACE_BEGIN
 
@@ -54,16 +55,17 @@ class TypedAllocator {
         TypedAllocator(const TypedAllocator &&) = delete;
         ~TypedAllocator() = default;
         
-        auto alloc() -> Tp *;
-        
-        auto free(Tp *ptr) -> char;
-        
         auto has_object(Tp *ptr) -> bool;
         
         auto empty_num() -> int;
         
     private:
+        auto allocate() -> Tp *;
+        
+        auto deallocate(Tp *ptr) -> char;
+        
         Tp mem[N];
+
         char count[N];
 };
 
@@ -75,7 +77,7 @@ TypedAllocator<Tp,N>::TypedAllocator() {
 }
 
 template<class Tp, int N>
-auto TypedAllocator<Tp,N>::alloc() -> Tp * {
+auto TypedAllocator<Tp,N>::allocate() -> Tp * {
     int i;
     for(i = 0; i < N; ++i) {
         if(this->count[i] == 0) {
@@ -93,7 +95,7 @@ auto TypedAllocator<Tp,N>::alloc() -> Tp * {
 }
 
 template<class Tp, int N>
-auto TypedAllocator<Tp,N>::free(Tp *ptr) -> char {
+auto TypedAllocator<Tp,N>::deallocate(Tp *ptr) -> char {
     int i;
     char *ptr2;
 
