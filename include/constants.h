@@ -45,4 +45,8 @@
     
 #define KCORE_NAMESPACE_END }
 
+#ifndef KCORE_USE_STL
+#define KCORE_USE_STL
+#endif
+
 #endif /* CONSTANTS_H_ */

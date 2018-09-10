@@ -42,13 +42,13 @@
 #define KSTRING_H_
  
 #include "constants.h"
+#include "cstring"
 
 KCORE_NAMESPACE_BEGIN
 
 #if defined(KCORE_USE_STL)
 
-#include "ctring"
-using memset = std::memset
+// using memset = std::memset;
 
 #else
 

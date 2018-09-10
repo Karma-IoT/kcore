@@ -42,6 +42,7 @@
 #define TYPED_ALLOCATOR_H_
 
 #include "constants.h"
+#include "kstring.h"
 
 KCORE_NAMESPACE_BEGIN
 
@@ -66,6 +67,7 @@ class TypedAllocator {
         char count[N];
 };
 
+
 template<class Tp, int N>
 TypedAllocator<Tp,N>::TypedAllocator() {
     memset(this->count, 0, N);
@@ -75,13 +77,13 @@ TypedAllocator<Tp,N>::TypedAllocator() {
 template<class Tp, int N>
 auto TypedAllocator<Tp,N>::alloc() -> Tp * {
     int i;
-    for(i = 0; i < this->num; ++i) {
+    for(i = 0; i < N; ++i) {
         if(this->count[i] == 0) {
             /* If this block was unused, we increase the reference count to
             indicate that it now is used and return a pointer to the
             memory block. */
             ++(this->count[i]);
-            return (void *)((char *)this->mem + (i * this->size));
+            return (Tp *)((char *)this->mem + (i * sizeof(Tp)));
         }
     }
 
@@ -98,7 +100,7 @@ auto TypedAllocator<Tp,N>::free(Tp *ptr) -> char {
     /* Walk through the list of blocks and try to find the block to
     which the pointer "ptr" points to. */
     ptr2 = (char *)this->mem;
-    for(i = 0; i < this->num; ++i) {
+    for(i = 0; i < N; ++i) {
 
         if(ptr2 == (char *)ptr) {
             /* We've found to block to which "ptr" points so we decrease the
@@ -117,7 +119,7 @@ auto TypedAllocator<Tp,N>::free(Tp *ptr) -> char {
 template<class Tp, int N>
 auto TypedAllocator<Tp,N>::has_object(Tp *ptr) -> bool{
     return (char *)ptr >= (char *)this->mem &&
-        (char *)ptr < (char *)this->mem + (this->num * this->size);
+        (char *)ptr < (char *)this->mem + (N * sizeof(Tp));
 }
 
 template<class Tp, int N>
@@ -125,7 +127,7 @@ auto TypedAllocator<Tp,N>::empty_num() -> int{
     int i;
     int num_free = 0;
 
-    for(i = 0; i < this->num; ++i) {
+    for(i = 0; i < N; ++i) {
         if(this->count[i] == 0) {
             ++num_free;
         }
