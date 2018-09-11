@@ -1,5 +1,6 @@
 #include "typed_allocator.h"
 #include "cassert"
+#include "iostream"
 
 using namespace std;
 using namespace kcore;
