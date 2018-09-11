@@ -50,7 +50,7 @@ namespace KCORE_NAMESPACE {
 template<class Tp, int N> 
 class typed_allocator {
     public:
-        constexpr typed_allocator() {
+        typed_allocator() {
             memset(this->count, 0, N);
             memset(this->mem, 0, sizeof(Tp) * N);
         }
@@ -61,7 +61,7 @@ class typed_allocator {
         using value_type = Tp;
     public:
         // impl allocator
-        constexpr auto allocate() -> Tp* {
+        auto allocate() -> Tp* {
             for(int i = 0; i < N; ++i) {
                 if(this->count[i] == 0) {
                     ++(this->count[i]);
@@ -71,7 +71,7 @@ class typed_allocator {
             return nullptr;
         }
 
-        constexpr auto deallocate(Tp *p) -> int {
+        auto deallocate(Tp *p) -> int {
             if(this->has(p)){
                 auto pos = (p - this->mem) / sizeof(Tp);
                 if (this->count[pos] > 0) {
@@ -84,7 +84,7 @@ class typed_allocator {
 ;
     public:
         // impl extend_allocator
-        constexpr auto available_count() -> size_t {
+        auto available_count() -> size_t const {
             int num_free = 0;
 
             for(int i = 0; i < N; ++i) {
@@ -96,7 +96,7 @@ class typed_allocator {
             return num_free;
         }
 
-        constexpr auto has(Tp *ptr) -> bool {
+        auto has(Tp *ptr) -> bool const {
             return ptr >= this->mem &&
                 ptr < this->mem + N + 1;
         }
