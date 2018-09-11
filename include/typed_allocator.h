@@ -47,95 +47,90 @@
 
 namespace KCORE_NAMESPACE {
 
-template<class Tp, int N>
-class TypedAllocator {
+template<class Tp, int N> 
+class typed_allocator {
     public:
-        TypedAllocator();
-        TypedAllocator(const TypedAllocator &) = delete;
-        TypedAllocator(const TypedAllocator &&) = delete;
-        ~TypedAllocator() = default;
-        
-        auto has_object(Tp *ptr) -> bool;
-        
-        auto empty_num() -> int;
+        typed_allocator() {
+            memset(this->count, 0, N);
+            memset(this->mem, 0, sizeof(Tp) * N);
+        }
+        typed_allocator(const typed_allocator &) = delete;
+        typed_allocator(const typed_allocator &&) = delete;
+        ~typed_allocator() = default;
+    public:
+        using value_type = Tp;
+    public:
+        // impl allocator
+        auto allocate() -> Tp*;
+        auto deallocate(Tp *p) -> int;
+    public:
+        // impl extend_allocator
+        auto available_count() -> size_t;
+        auto has(Tp *) -> bool;
         
     private:
-        auto allocate() -> Tp *;
-        
-        auto deallocate(Tp *ptr) -> char;
-        
         Tp mem[N];
-
         char count[N];
 };
 
+template< class T1, int N1, class T2, int N2>
+bool operator==( const typed_allocator<T1, N1>& lhs, const typed_allocator<T2, N2>& rhs );
+
+template< class T1, int N1, class T2, int N2>
+bool operator!=( const typed_allocator<T1, N1>& lhs, const typed_allocator<T2, N2>& rhs );
+
+/*-------------------------------------------*/
 
 template<class Tp, int N>
-TypedAllocator<Tp,N>::TypedAllocator() {
-    memset(this->count, 0, N);
-    memset(this->mem, 0, sizeof(Tp) * N);
-}
-
-template<class Tp, int N>
-auto TypedAllocator<Tp,N>::allocate() -> Tp * {
-    int i;
-    for(i = 0; i < N; ++i) {
+auto typed_allocator<Tp,N>::allocate() -> Tp * {
+    for(int i = 0; i < N; ++i) {
         if(this->count[i] == 0) {
-            /* If this block was unused, we increase the reference count to
-            indicate that it now is used and return a pointer to the
-            memory block. */
             ++(this->count[i]);
-            return (Tp *)((char *)this->mem + (i * sizeof(Tp)));
+            return &(this->mem[i]);
         }
     }
-
-    /* No free block was found, so we return NULL to indicate failure to
-     allocate block. */
     return nullptr;
 }
 
 template<class Tp, int N>
-auto TypedAllocator<Tp,N>::deallocate(Tp *ptr) -> char {
-    int i;
-    char *ptr2;
-
-    /* Walk through the list of blocks and try to find the block to
-    which the pointer "ptr" points to. */
-    ptr2 = (char *)this->mem;
-    for(i = 0; i < N; ++i) {
-
-        if(ptr2 == (char *)ptr) {
-            /* We've found to block to which "ptr" points so we decrease the
-            reference count and return the new value of it. */
-            if(this->count[i] > 0) {
-                /* Make sure that we don't deallocate free memory. */
-                --(this->count[i]);
-            }
-            return this->count[i];
+auto typed_allocator<Tp,N>::deallocate(Tp *p) -> int {
+    if(this->has(p)){
+        auto pos = (p - this->mem) / sizeof(Tp);
+        if (this->count[pos] > 0) {
+            -- (this -> count[pos]);
         }
-        ptr2 += this->size;
-    }
+        return this->count[pos];
+    } 
     return -1;
 }
 
 template<class Tp, int N>
-auto TypedAllocator<Tp,N>::has_object(Tp *ptr) -> bool{
+auto typed_allocator<Tp,N>::has(Tp *ptr) -> bool{
     return (char *)ptr >= (char *)this->mem &&
         (char *)ptr < (char *)this->mem + (N * sizeof(Tp));
 }
 
 template<class Tp, int N>
-auto TypedAllocator<Tp,N>::empty_num() -> int{
-    int i;
+auto typed_allocator<Tp,N>::available_count() -> size_t{
     int num_free = 0;
 
-    for(i = 0; i < N; ++i) {
+    for(int i = 0; i < N; ++i) {
         if(this->count[i] == 0) {
             ++num_free;
         }
     }
     
     return num_free;
+}
+
+template< class T1, int N1, class T2, int N2>
+bool operator==( const typed_allocator<T1, N1>& lhs, const typed_allocator<T2, N2>& rhs ) {
+    return &lhs == &rhs;
+}
+
+template< class T1, int N1, class T2, int N2>
+bool operator!=( const typed_allocator<T1, N1>& lhs, const typed_allocator<T2, N2>& rhs ) {
+    return &lhs != &rhs;
 }
 
 }
