@@ -32,24 +32,19 @@
 
 /**
  * \file
- *         STL-like cstring.
+ *         Concepts of iterator traits.
  * \author
  *         tiannian <dtiannian@aliyun.com>
  *
  */
 
-#ifndef KSTRING_H_
-#define KSTRING_H_
- 
+#ifndef STL_ALTERNATIVE_POINTER_TRAITS_H_
+#define STL_ALTERNATIVE_POINTER_TRAITS_H_
+
 #include "constants.h"
 
-#if defined(KCORE_USE_STL)
-
-#include "cstring"
-//std::memset
-
-#else
-
-#endif
-
-#endif /* KSTRING_H_ */
+namespace KCORE_NAMESPACE {
+    
+} /* KCORE_NAMESPACE */
+ 
+#endif /* STL_ALTERNATIVE_POINTER_TRAITS_H_ */

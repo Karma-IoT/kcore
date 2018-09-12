@@ -32,24 +32,26 @@
 
 /**
  * \file
- *         STL-like cstring.
+ *         cstring's implement.
  * \author
  *         tiannian <dtiannian@aliyun.com>
  *
  */
 
-#ifndef KSTDDEF_H_
-#define KSTDDEF_H_
+#ifndef STL_ALLOCATOR_H_
+#define STL_ALLOCATOR_H_
  
 #include "constants.h"
 
 #if defined(KCORE_USE_STL)
 
-#include "cstddef"
-//std::size_t
+#include <memory>
+using std::allocator_traits;
 
 #else
+    
+#include "alternative/allocator.h"
 
 #endif
 
-#endif /* KSTDDEF_H_ */
+#endif /* STL_ALLOCATOR_H_ */
