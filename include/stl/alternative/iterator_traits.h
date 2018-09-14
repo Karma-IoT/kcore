@@ -45,57 +45,139 @@
 #include "concept_traits.h"
 
 namespace KCORE_NAMESPACE {
-    
-template<typename T>
-concept bool Iterator = CopyConstructible<T> &&
-    CopyAssignable<T> &&
-    Destructible<T> &&
-    Swappable<T> && 
-    requires {
-        typename T::value_type;
-        typename T::difference_type;
-        typename T::reference;
-        typename T::pointer;
-        typename T::iterator_category;
-    } && requires(T r) {
-        { *r };
-        { ++r } -> T&;
-    }
-    
 
-template<typename T>
-concept bool InputIterator = Iterator<T> &&
-    EqualityComparable<T> &&
-    requires {
-        typename T::reference;
-        typename T::value_type;
-    } && requires(T i, T j) {
-        { i != j } -> bool;
-        { *i } -> reference;
-        { *i } -> value_type;
-        { (void)i++ };
-        { *i++ } -> value_type;
+template <class I>
+concept bool WeaklyIncrementable =
+    Semiregular<I> &&
+    requires(I i) {
+        typename difference_type_t<I>;
+        requires SignedIntegral<difference_type_t<I>>;
+        { ++i } -> Same<I>&;
+        i++;
     };
-    
 
-template<typename T>
-concept bool OutputIterator = Iterator<T> && 
-    //is_class<T>::value &&
-    //is_pointer<T>::value &&
-    requires(T r, U o) {
-        { *r = o };
-        { *r++ = o };
-        { ++r } -> T&;
-        { r++ } -> const X&;
-    }
-    
-    
-template<typename T>
-concept bool ForwardIterator = InputIterator<T> &&
-    DefaultConstructible<T> &&
-    // 多趟保证
-    true;
-    
+template <class I>
+concept bool Iterator =
+    requires(I i) {
+        { *i } -> auto&&; // 要求： i 可解引用
+    } &&
+    WeaklyIncrementable<I>;
+
+template <class T>
+concept bool value_type_t = requires {
+    typename T::value_type;
+}
+
+template <class T>
+concept bool reference_t = requires {
+    typename T::reference;
+}
+
+template <class T>
+concept bool rvalue_reference_t = requires {
+    typename T::rvalue_reference;
+}
+
+template <class T>
+concept bool iterator_category_t = requires {
+    typename T::iterator_category;
+}
+
+template < class In >
+concept bool Readable =
+    requires {
+        typename value_type_t<In>;
+        typename reference_t<In>;
+        typename rvalue_reference_t<In>;
+    } &&
+    CommonReference<
+        reference_t<In>&&, value_type_t<In>&
+    > &&
+    CommonReference<
+        reference_t<In>&&, rvalue_reference_t<In>&&
+    > &&
+    CommonReference<
+        rvalue_reference_t<In>&&, const value_type_t<In>&
+    >;
+
+struct input_iterator_tag { };
+
+struct output_iterator_tag { };
+
+struct forward_iterator_tag : public input_iterator_tag { };
+
+struct bidirectional_iterator_tag : public forward_iterator_tag { };
+
+struct random_access_iterator_tag : public bidirectional_iterator_tag { };
+
+template < class I >
+concept bool InputIterator =
+    Iterator<I> && Readable<I> &&
+    requires { typename iterator_category_t<I>; } &&
+    DerivedFrom<iterator_category_t<I>, input_iterator_tag>;
+
+template <class I>
+concept bool Incrementable =
+    Regular<I> &&
+    WeaklyIncrementable<I> &&
+    requires(I i) {
+        { i++ } -> Same<I>&&;
+    };
+
+template < class S, class I >
+concept bool Sentinel =
+    Semiregular<S> && Iterator<I> &&
+    WeaklyEqualityComparableWith<S, I>;
+
+template < class I >
+concept bool ForwardIterator =
+    InputIterator<I> &&
+    DerivedFrom<iterator_category_t<I>, forward_iterator_tag> &&
+    Incrementable<I> &&
+    Sentinel<I, I>;
+
+template < class I >
+concept bool BidirectionalIterator =
+    ForwardIterator<I> &&
+    DerivedFrom<
+        iterator_category_t<I>, bidirectional_iterator_tag
+    > &&
+    requires(I i) {
+        { --i } -> Same<I>&;
+        { i-- } -> Same<I>&&;
+    };
+
+
+template <class S, class I>
+constexpr bool disable_sized_sentinel = false;
+
+template <class S, class I>
+concept bool SizedSentinel =
+    Sentinel<S, I> &&
+    !disable_sized_sentinel<remove_cv_t<S>, remove_cv_t<I>> &&
+    requires(const I& i, const S& s) {
+        { s - i } -> Same<difference_type_t<I>>&&;
+        { i - s } -> Same<difference_type_t<I>>&&;
+    };
+
+template <class I>
+concept bool RandomAccessIterator =
+    BidirectionalIterator<I> &&
+    DerivedFrom<
+        iterator_category_t<I>, random_access_iterator_tag
+    > &&
+    StrictTotallyOrdered<I> &&
+    SizedSentinel<I, I> &&
+    requires(I i, const I j, const difference_type_t<I> n) {
+        { i += n } -> Same<I>&;
+        { j + n }  -> Same<I>&&;
+        { n + j }  -> Same<I>&&;
+        { i -= n } -> Same<I>&;
+        { j - n }  -> Same<I>&&;
+        j[n];
+        requires Same<decltype(j[n]), reference_t<I>>;
+    };
+
 } /* KCORE_NAMESPACE */
- 
+
 #endif /* STL_ALTERNATIVE_ITERATOR_TRAITS_H_ */

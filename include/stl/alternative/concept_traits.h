@@ -42,70 +42,197 @@
 #define STL_ALTERNATIVE_CONCEPT_TRAITS_H_
 
 #include "constants.h"
+#include "type_traits"
+#include "utility"
 
 namespace KCORE_NAMESPACE {
 
-template<typename T>
-concept bool EqualityComparable = requires (T a, T b) {
-    { a == b } -> bool;
-}
+template < class T, class U >
+concept bool Same = is_same<T, U>::value;
 
-template<typename T>
-concept bool DefaultConstructible = requires {
-    { T u } -> T;
-    { T u{} } -> T;
-    { T() } -> T;
-    { T{} } -> T;
-}
+template < class T >
+concept bool Destructible = is_destructible<T>::value;
 
-template<typename T>
-concept bool MoveConstructible = requires (T rv) {
-    // typename std::add_rvalue_reference<T>::type rv;
-    { T u = rv } -> T;
-    { T(rv) } -> T;
-}
+template <class From, class To>
+concept bool ConvertibleTo =
+    is_convertible<From, To>::value &&
+    requires(From (&f)()) {
+        static_cast<To>(f());
+    };
 
-template<typename T>
-concept bool CopyConstructible = MoveConstructible<T> && requires (T v) {
-    // typename std::add_lvalue_reference<typename std::add_const<T>::type>::type v;
-    { T u = v } -> T;
-    { T(v) } -> T;
-}
+template < class T, class... Args >
+concept bool Constructible =
+    Destructible<T> && is_constructible<T, Args...>::value;
 
-template<typename T>
-concept bool MoveAssignable = requires (T rv) {
-    // typename std::add_rvalue_reference<T>::type v;
-    { t = rv } -> T&;
-}
+template < class T >
+concept bool DefaultConstructible = Constructible<T>;
 
-template<typename T>
-concept bool CopyAssignable = MoveAssignable<T> && requires (T v) {
-    // typename std::add_lvalue_reference<const T>::type v;
-    { t = v } -> T&;
-}
+template < class T >
+concept bool MoveConstructible =
+    Constructible<T, T> && ConvertibleTo<T, T>;
 
-template<typename T>
-concept bool Destructible = requires (T v) {
-    // typename std::add_lvalue_reference<const T>::type v;
-    { u.~T() };
-}
+template <class T>
+concept bool CopyConstructible =
+    MoveConstructible<T> &&
+    Constructible<T, T&> && ConvertibleTo<T&, T> &&
+    Constructible<T, const T&> && ConvertibleTo<const T&, T> &&
+    Constructible<T, const T> && ConvertibleTo<const T, T>;
 
-template<typename T>
-concept bool Swappable = true;
 
-template<typename T>
-concept bool NullablePointer = requires (T p, T q) {
-    { p != q } -> bool;
-} && requires (T p, nullptr_t np) {
-    { T p(np) } -> nullptr_t;
-    { T p = np } -> nullptr_t;
-    { p = np } -> bool;
-    { p == np } -> bool;
-    { np == p } -> bool;
-    { p != np } -> bool;
-    { np != p } -> bool;
-}
+template < class T, class U >
+concept bool CommonReference =
+    Same<common_reference_t<T, U>, common_reference_t<U, T>> &&
+    ConvertibleTo<T, common_reference_t<T, U>> &&
+    ConvertibleTo<U, common_reference_t<T, U>>;
+
+template < class T, class U >
+concept bool Assignable =
+    is_lvalue_reference<T>::value &&
+    CommonReference<
+        const remove_reference_t<T>&,
+        const remove_reference_t<U>&> &&
+    requires(T t, U&& u) {
+        { t = forward<U>(u) } -> Same<T>&&;
+    };
+
+template< class T >
+concept bool Swappable =
+    requires(T& a, T& b) {
+        swap(a, b);
+    };
+
+template< class T, class U >
+concept bool SwappableWith =
+    CommonReference<
+        const remove_reference_t<T>&,
+        const remove_reference_t<U>&> &&
+    requires(T&& t, U&& u) {
+        swap(forward<T>(t), forward<T>(t));
+        swap(forward<U>(u), forward<U>(u));
+        swap(forward<T>(t), forward<U>(u));
+        swap(forward<U>(u), forward<T>(t));
+  };
+
+template < class T >
+concept bool Movable =
+    is_object<T>::value &&
+    MoveConstructible<T> &&
+    Assignable<T&, T> &&
+    Swappable<T>;
+
+template <class T>
+concept bool Copyable =
+    CopyConstructible<T> &&
+    Movable<T> &&
+    Assignable<T&, const T&>;
+
+template <class T>
+concept bool Semiregular =
+    Copyable<T> &&
+    DefaultConstructible<T>;
+
+template < class T >
+concept bool Integral =
+    is_integral<T>::value;
+
+template < class T >
+concept bool SignedIntegral =
+    Integral<T> &&
+    is_signed<T>::value;
+
+template <class B>
+
+concept bool Boolean =
+    Movable<decay_t<B>> &&
+    requires(const remove_reference_t<B>& b1,
+             const remove_reference_t<B>& b2, const bool a) {
+        { b1 }       -> ConvertibleTo<bool>&&;
+        { !b1 }      -> ConvertibleTo<bool>&&;
+        { b1 && a }  -> Same<bool>&&;
+        { b1 || a }  -> Same<bool>&&;
+        { b1 && b2 } -> Same<bool>&&;
+        { a && b2  } -> Same<bool>&&;
+        { b1 || b2 } -> Same<bool>&&;
+        { a || b2  } -> Same<bool>&&;
+        { b1 == b2 } -> ConvertibleTo<bool>&&;
+        { b1 == a  } -> ConvertibleTo<bool>&&;
+        { a == b2  } -> ConvertibleTo<bool>&&;
+        { b1 != b2 } -> ConvertibleTo<bool>&&;
+        { b1 != a  } -> ConvertibleTo<bool>&&;
+        { a != b2  } -> ConvertibleTo<bool>&&;
+    };
+
+template <class T, class U>
+concept bool WeaklyEqualityComparableWith =
+    requires(const remove_reference_t<T>& t,
+             const remove_reference_t<U>& u) {
+        { t == u } -> Boolean&&;
+        { t != u } -> Boolean&&;
+        { u == t } -> Boolean&&;
+        { u != t } -> Boolean&&;
+    };
+
+template < class T >
+concept bool EqualityComparable = WeaklyEqualityComparableWith<T, T>;
+
+template <class T, class U>
+concept bool EqualityComparableWith =
+    EqualityComparable<T> &&
+    EqualityComparable<U> &&
+    CommonReference<
+        const remove_reference_t<T>&,
+        const remove_reference_t<U>&> &&
+    EqualityComparable<
+        common_reference_t<
+            const remove_reference_t<T>&,
+            const remove_reference_t<U>&>> &&
+    WeaklyEqualityComparableWith<T, U>;
+
+template < class T, class U >
+concept bool DerivedFrom =
+    is_base_of<U, T>::value &&
+    is_convertible<remove_cv_t<T>*, remove_cv_t<U>*>::value;
+
+template <class T>
+concept bool Regular =
+    Semiregular<T> &&
+    EqualityComparable<T>;
+
+template <class T>
+concept bool StrictTotallyOrdered =
+    EqualityComparable<T> &&
+    requires(const remove_reference_t<T>& a,
+             const remove_reference_t<T>& b) {
+        { a < b }  -> Boolean&&;
+        { a > b }  -> Boolean&&;
+        { a <= b } -> Boolean&&;
+        { a >= b } -> Boolean&&;
+    };
+
+template <class T, class U>
+concept bool StrictTotallyOrderedWith =
+    StrictTotallyOrdered<T> &&
+    StrictTotallyOrdered<U> &&
+    CommonReference<
+        const remove_reference_t<T>&,
+        const remove_reference_t<U>&> &&
+    StrictTotallyOrdered<
+    common_reference_t<
+        const remove_reference_t<T>&,
+        const remove_reference_t<U>&>> &&
+    EqualityComparableWith<T, U> &&
+    requires(const remove_reference_t<T>& t,
+             const remove_reference_t<U>& u) {
+        { t < u }  -> Boolean&&;
+        { t > u }  -> Boolean&&;
+        { t <= u } -> Boolean&&;
+        { t >= u } -> Boolean&&;
+        { u < t }  -> Boolean&&;
+        { u > t }  -> Boolean&&;
+        { u <= t } -> Boolean&&;
+        { u >= t } -> Boolean&&;
+    };
 
 } /* KCORE_NAMESPACE */
- 
+
 #endif /* STL_ALTERNATIVE_CONCEPT_TRAITS_H_ */

@@ -32,29 +32,22 @@
 
 /**
  * \file
- *         Concepts of iterator traits.
+ *         Concepts of allocator.
  * \author
  *         tiannian <dtiannian@aliyun.com>
  *
  */
 
-#ifndef STL_ALTERNATIVE_POINTER_TRAITS_H_
-#define STL_ALTERNATIVE_POINTER_TRAITS_H_
+#ifndef ALLOCATOR_H_
+#define ALLOCATOR_H_
 
 #include "constants.h"
-#include "stddef.h"
-#include "concept_traits.h"
 
 namespace KCORE_NAMESPACE {
 
-template <class P>
-concept bool NullablePointer =
-    EqualityComparable<P> &&
-    DefaultConstructible<P> &&
-    CopyConstructible<P> &&
-    Assignable<P, nullptr_t> &&
-    Destructible<P>
+using size_t = long unsigned int;
+using nullptr_t = decltype(nullptr)
 
 } /* KCORE_NAMESPACE */
 
-#endif /* STL_ALTERNATIVE_POINTER_TRAITS_H_ */
+#endif /* ALLOCATOR_H_ */
